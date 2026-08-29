@@ -380,7 +380,7 @@
 <div class="estado" id="estado">Conectando…</div>
 
 <div class="barra">
-    <input class="entrada" id="entrada" maxlength="25" placeholder="Escribe tu mensaje aquí..." autocomplete="off">
+    <input class="entrada" id="entrada" maxlength="25" placeholder="Escribí tu mensaje acá..." autocomplete="off">
     <span class="contador" id="contador">0/25</span>
     <div class="color-picker-contenedor" title="Elegir color de tarjeta">
         <div class="color-btns" id="colorBtns">
@@ -506,7 +506,7 @@
             }
         } else {
             var restante = diasRestantes();
-            estado.textContent = "Vuelve a escribir en " + restante;
+            estado.textContent = "Volvé a escribir en " + restante;
             estado.classList.add("bloqueado");
             if (!hint.dataset.temporal) {
                 hint.textContent = "Ya publicaste hoy. Esperá un rato.";
@@ -657,7 +657,7 @@
 
             var titulo = document.createElement("div");
             titulo.className = "prompt-titulo";
-            titulo.textContent = "¿DESEAS FIRMAR TU MENSAJE?";
+            titulo.textContent = "¿QUERÉS FIRMAR TU MENSAJE?";
 
             var campo = document.createElement("input");
             campo.className = "prompt-input";
@@ -670,7 +670,7 @@
 
             var btnNo = document.createElement("button");
             btnNo.className = "prompt-btn nocolor";
-            btnNo.textContent = "SIN FIRMA";
+            btnNo.textContent = "SIN FIRMA :(";
 
             var btnSi = document.createElement("button");
             btnSi.className = "prompt-btn si";
@@ -765,7 +765,7 @@
                     contador.textContent = "0/25";
                     if (res.clientId) miClienteId = res.clientId;
                     bloqueoUI();
-                    mostrarHintTemporal("¡Mensaje puesto con éxito!", false);
+                    mostrarHintTemporal("¡Mensaje puesto!", false);
                     return cargarTablero();
                 })
                 .catch(function (err) {
@@ -854,13 +854,13 @@
         }, 1200);
         if (clicksTitulo >= 3) {
             clicksTitulo = 0;
-            var clave = window.prompt("Poné la contraseña super secreta para reiniciar el tablero");
+            var clave = window.prompt("Que tocas?");
             if (clave === "Ezequiel2014!") {
                 reiniciarTablero().catch(function () {
                     mostrarHintTemporal("No se pudo reiniciar el tablero.", true);
                 });
             } else {
-                mostrarHintTemporal("Contraseña incorrecta.", true);
+                mostrarHintTemporal("Chusmo", true);
             }
         }
     });
