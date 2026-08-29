@@ -195,6 +195,11 @@ app.post('/api/labels', (req, res) => {
     });
 });
 
-app.listen(PORT, () => {
-    console.log(`Tablero colaborativo escuchando en http://localhost:${PORT}`);
-});
+if (require.main === module) {
+    app.listen(PORT, () => {
+        console.log(`Tablero colaborativo escuchando en http://localhost:${PORT}`);
+    });
+}
+
+module.exports = app;
+
