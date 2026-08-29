@@ -140,6 +140,16 @@
         text-align: center;
         width: min(380px, 88vw);
     }
+    .prompt.error { border-color: #ff6b6b; box-shadow: 8px 8px 0 rgba(0,0,0,0.6), 0 0 14px #ff6b6b; }
+    .prompt.error .prompt-input { border-color: #ff6b6b; }
+    .prompt-input.shake { animation: shake 0.4s; }
+    @keyframes shake {
+        0%, 100% { transform: translateX(0); }
+        20% { transform: translateX(-6px); }
+        40% { transform: translateX(6px); }
+        60% { transform: translateX(-4px); }
+        80% { transform: translateX(4px); }
+    }
     .prompt-titulo {
         font-family: "Press Start 2P", monospace;
         font-size: 13px;
@@ -356,10 +366,24 @@
         }
 
         .etiqueta {
-            max-width: 72vw;
-            font-size: 20px;
-            padding: 12px 14px;
+            max-width: 60vw;
+            font-size: 13px;
+            padding: 6px 8px;
+            border-width: 3px;
+            box-shadow: 4px 4px 0 rgba(0,0,0,0.55), inset 0 0 0 1px #1a1440;
         }
+        .etiqueta .detalle {
+            margin-top: 4px;
+            padding-top: 4px;
+            border-top-width: 1px;
+            font-size: 12px;
+            line-height: 1.25;
+        }
+        .etiqueta .detalle .hora { font-size: 11px; }
+        .etiqueta.propia {
+            box-shadow: 4px 4px 0 rgba(0,0,0,0.55), inset 0 0 0 1px #1a1440, 0 0 10px #41ff8a;
+        }
+        .etiqueta:hover { transform: translate(-50%, -50%) scale(1.02); }
 
         .prompt { width: 90vw; padding: 20px 16px; }
         .prompt-titulo { font-size: 12px; }
@@ -657,20 +681,16 @@
 
             var titulo = document.createElement("div");
             titulo.className = "prompt-titulo";
-            titulo.textContent = "¿QUERÉS FIRMAR TU MENSAJE?";
+            titulo.textContent = "FIRMÁ TU MENSAJE";
 
             var campo = document.createElement("input");
             campo.className = "prompt-input";
             campo.maxLength = 20;
-            campo.placeholder = "Tu firma (opcional)";
+            campo.placeholder = "Tu firma";
             campo.autocomplete = "off";
 
             var acciones = document.createElement("div");
             acciones.className = "prompt-acciones";
-
-            var btnNo = document.createElement("button");
-            btnNo.className = "prompt-btn nocolor";
-            btnNo.textContent = "SIN FIRMA :(";
 
             var btnSi = document.createElement("button");
             btnSi.className = "prompt-btn si";
@@ -684,18 +704,44 @@
                 resolve(nombre ? nombre.trim() : "");
             };
 
-            btnNo.addEventListener("click", function () { cerrar(""); });
-            btnSi.addEventListener("click", function () { cerrar(campo.value); });
+            function marcarError(mensaje) {
+                caja.classList.add("error");
+                campo.placeholder = mensaje;
+                campo.classList.remove("shake");
+                void campo.offsetWidth;
+                campo.classList.add("shake");
+            }
+
+            function validarYEnviar() {
+                var nombre = campo.value.trim();
+                if (!nombre) {
+                    marcarError("FIRMÁ");
+                    return;
+                }
+                if (nombre.length < 3) {
+                    campo.value = "";
+                    marcarError("MÍNIMO 3 LETRAS");
+                    return;
+                }
+                cerrar(nombre);
+            }
+
+            btnSi.addEventListener("click", validarYEnviar);
             overlay.addEventListener("mousedown", function (ev) {
-                if (ev.target === overlay) cerrar("");
+                if (ev.target === overlay) confirmarCerrar();
             });
             campo.addEventListener("keydown", function (ev) {
-                if (ev.key === "Enter") cerrar(campo.value);
-                if (ev.key === "Escape") cerrar("");
+                if (ev.key === "Enter") validarYEnviar();
+                if (ev.key === "Escape") confirmarCerrar();
                 ev.stopPropagation();
             });
 
-            acciones.appendChild(btnNo);
+            function confirmarCerrar() {
+                var nombre = campo.value.trim();
+                if (!nombre || nombre.length < 3) return;
+                cerrar(nombre);
+            }
+
             acciones.appendChild(btnSi);
             caja.appendChild(titulo);
             caja.appendChild(campo);
