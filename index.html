@@ -432,7 +432,7 @@
     var diaActualUTC = null;
     var miColor = "#ffd83d";
 
-    var CUENTA_UTC = 86400000;
+    var CUENTA_UTC = 10800000;
 
     function utcDay(date) {
         return Math.floor(date.getTime() / CUENTA_UTC) * CUENTA_UTC;
@@ -509,7 +509,7 @@
             estado.textContent = "Volvé a escribir en " + restante;
             estado.classList.add("bloqueado");
             if (!hint.dataset.temporal) {
-                hint.textContent = "Ya publicaste hoy. Esperá un rato.";
+                hint.textContent = "Ya publicaste. Esperá un rato.";
                 hint.classList.add("bloqueado");
             }
         }
