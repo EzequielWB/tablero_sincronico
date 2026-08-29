@@ -291,6 +291,31 @@
     }
     .estado.bloqueado { border-color: #ff6b6b; color: #ff6b6b; background: #45172a; }
 
+    /* Pequeño prompt de espera (hipervínculo) */
+    .espera-link {
+        position: fixed;
+        top: 74px;
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 9998;
+        display: none;
+        background: #241b5e;
+        border: 3px solid #ffd83d;
+        color: #c8b8ff;
+        font-family: "VT323", monospace;
+        font-size: 18px;
+        line-height: 1.1;
+        padding: 6px 14px;
+        text-align: center;
+        text-decoration: none;
+        box-shadow: 4px 4px 0 rgba(0,0,0,0.5);
+        cursor: pointer;
+        transition: transform 0.1s ease;
+    }
+    .espera-link b { color: #41ff8a; font-weight: 700; }
+    .espera-link:hover { transform: translateX(-50%) translate(1px, 1px); }
+    .espera-link:active { transform: translateX(-50%) translate(2px, 2px); box-shadow: 2px 2px 0 rgba(0,0,0,0.5); }
+
     /* ===== MODO MÓVIL ===== */
     @media (max-width: 768px) {
         h1.titulo {
@@ -312,6 +337,17 @@
             text-align: center;
             box-shadow: 4px 4px 0 rgba(0,0,0,0.5);
         }
+
+        .espera-link {
+            top: 66px;
+            left: 8px;
+            right: 8px;
+            transform: none;
+            font-size: 17px;
+            padding: 7px 10px;
+        }
+        .espera-link:hover { transform: translate(1px, 1px); }
+        .espera-link:active { transform: translate(2px, 2px); }
 
         .barra {
             flex-wrap: wrap;
@@ -403,6 +439,8 @@
 
 <div class="estado" id="estado">Conectando…</div>
 
+<a class="espera-link" id="esperaLink" href="https://vampiros-sobreviven.vercel.app/" target="_blank" rel="noopener">Aburrido de esperar? <b>Tocame</b></a>
+
 <div class="barra">
     <input class="entrada" id="entrada" maxlength="25" placeholder="Escribí tu mensaje acá..." autocomplete="off">
     <span class="contador" id="contador">0/25</span>
@@ -434,6 +472,7 @@
     var estado = document.getElementById("estado");
     var colorBtns = document.getElementById("colorBtns");
     var barra = document.querySelector(".barra");
+    var esperaLink = document.getElementById("esperaLink");
 
     // Mantener la barra sobre el teclado virtual en móviles
     var visualViewport = window.visualViewport || null;
@@ -524,6 +563,7 @@
         if (puedoPublicar) {
             estado.textContent = "Podés escribir";
             estado.classList.remove("bloqueado");
+            esperaLink.style.display = "none";
             if (!hint.dataset.temporal) {
                 hint.textContent = "Escribí un mensaje y hacé clic en el tablero para colocarlo.";
                 hint.classList.remove("bloqueado");
@@ -532,6 +572,7 @@
             var restante = diasRestantes();
             estado.textContent = "Volvé a escribir en " + restante;
             estado.classList.add("bloqueado");
+            esperaLink.style.display = "block";
             if (!hint.dataset.temporal) {
                 hint.textContent = "Ya publicaste. Esperá un rato.";
                 hint.classList.add("bloqueado");
