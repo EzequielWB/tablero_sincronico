@@ -187,6 +187,37 @@
     .prompt-btn:hover { filter: brightness(1.1); }
     .prompt-btn:active { transform: translate(2px, 2px); box-shadow: 2px 2px 0 rgba(0,0,0,0.4); }
 
+    .prompt-color-titulo {
+        font-family: "Press Start 2P", monospace;
+        font-size: 10px;
+        color: #ffd83d;
+        text-shadow: 2px 2px 0 #3a2ce0;
+        margin-bottom: 10px;
+    }
+    .prompt-color-btns {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 8px;
+        margin-bottom: 18px;
+    }
+    .prompt-color-btn {
+        width: 34px;
+        height: 34px;
+        border: 2px solid #0f0c29;
+        border-radius: 4px;
+        cursor: pointer;
+        flex: 0 0 auto;
+        box-shadow: 2px 2px 0 rgba(0,0,0,0.4);
+        transition: transform 0.1s;
+    }
+    .prompt-color-btn:hover { transform: translate(1px, 1px); }
+    .prompt-color-btn:active { transform: translate(2px, 2px); }
+    .prompt-color-btn.activo {
+        outline: 3px solid #ffffff;
+        transform: translate(1px, 1px);
+    }
+
     .barra {
         position: fixed;
         left: 0;
@@ -422,6 +453,8 @@
         .etiqueta:hover { transform: translate(-50%, -50%) scale(1.02); }
 
         .prompt { width: 90vw; padding: 20px 16px; }
+        .prompt-color-titulo { font-size: 9px; }
+        .prompt-color-btn { width: 30px; height: 30px; }
         .prompt-titulo { font-size: 12px; }
         .prompt-btn { font-size: 9px; padding: 14px 6px; }
         .prompt-acciones { gap: 10px; }
@@ -444,21 +477,7 @@
 <div class="barra">
     <input class="entrada" id="entrada" maxlength="25" placeholder="Escribí tu mensaje acá..." autocomplete="off">
     <span class="contador" id="contador">0/25</span>
-    <div class="color-picker-contenedor" title="Elegir color de tarjeta">
-        <div class="color-btns" id="colorBtns">
-            <button class="color-btn color-1" title="Amarillo" value="#ffd83d"></button>
-            <button class="color-btn color-2" title="Verde claro" value="#41ff8a"></button>
-            <button class="color-btn color-3" title="Rosa" value="#ff41b5"></button>
-            <button class="color-btn color-4" title="Morado" value="#3a2ce0"></button>
-            <button class="color-btn color-5" title="Lila claro" value="#c8b8ff"></button>
-            <button class="color-btn color-6" title="Rojo oscuro" value="#8a0c44"></button>
-            <button class="color-btn color-7" title="Rojo" value="#ff6b6b"></button>
-            <button class="color-btn color-8" title="Purpura oscuro" value="#3b3658"></button>
-            <button class="color-btn color-9" title="Azul oscuro" value="#1a1440"></button>
-            <button class="color-btn color-10" title="Casi negro" value="#0f0c29"></button>
-        </div>
-        <span class="hint" id="hint">Escribí un mensaje y hacé clic en el tablero para colocarlo.</span>
-    </div>
+    <span class="hint" id="hint">Escribí un mensaje y hacé clic en el tablero para colocarlo.</span>
 </div>
 
 <script>
@@ -470,7 +489,6 @@
     var contador = document.getElementById("contador");
     var hint = document.getElementById("hint");
     var estado = document.getElementById("estado");
-    var colorBtns = document.getElementById("colorBtns");
     var barra = document.querySelector(".barra");
     var esperaLink = document.getElementById("esperaLink");
 
@@ -493,9 +511,8 @@
     var miClienteId = null;
     var puedoPublicar = false;
     var diaActualUTC = null;
-    var miColor = "#ffd83d";
 
-    var CUENTA_UTC = 28800000;
+    var CUENTA_UTC = 7200000;
 
     function utcDay(date) {
         return Math.floor(date.getTime() / CUENTA_UTC) * CUENTA_UTC;
@@ -592,25 +609,6 @@
             actualizarEstado();
         }, 3500);
     }
-
-    // Configuración del Selector de Color
-    miColor = "#ffd83d";
-
-    function marcarColorActivo() {
-        colorBtns.querySelectorAll(".color-btn").forEach(function (btn) {
-            var activo = btn.getAttribute("value") === miColor;
-            btn.style.outline = activo ? "3px solid #ffffff" : "none";
-            btn.style.transform = activo ? "translate(1px, 1px)" : "";
-        });
-    }
-
-    colorBtns.querySelectorAll(".color-btn").forEach(function (btn) {
-        btn.addEventListener("click", function () {
-            miColor = btn.getAttribute("value");
-            marcarColorActivo();
-        });
-    });
-    marcarColorActivo();
 
     // Contador de caracteres
     entrada.addEventListener("input", function () {
@@ -737,12 +735,50 @@
             btnSi.className = "prompt-btn si";
             btnSi.textContent = "FIRMAR";
 
+            var colores = [
+                { nombre: "Amarillo", valor: "#ffd83d" },
+                { nombre: "Verde claro", valor: "#41ff8a" },
+                { nombre: "Rosa", valor: "#ff41b5" },
+                { nombre: "Morado", valor: "#3a2ce0" },
+                { nombre: "Lila claro", valor: "#c8b8ff" },
+                { nombre: "Rojo oscuro", valor: "#8a0c44" },
+                { nombre: "Rojo", valor: "#ff6b6b" },
+                { nombre: "Purpura oscuro", valor: "#3b3658" },
+                { nombre: "Azul oscuro", valor: "#1a1440" },
+                { nombre: "Casi negro", valor: "#0f0c29" }
+            ];
+            var colorSeleccionado = colores[0].valor;
+
+            var colorLabel = document.createElement("div");
+            colorLabel.className = "prompt-color-titulo";
+            colorLabel.textContent = "Elegí un color:";
+
+            var colorBtns = document.createElement("div");
+            colorBtns.className = "prompt-color-btns";
+            colores.forEach(function (c) {
+                var b = document.createElement("button");
+                b.type = "button";
+                b.className = "prompt-color-btn";
+                b.title = c.nombre;
+                b.style.backgroundColor = c.valor;
+                b.dataset.color = c.valor;
+                if (c.valor === colorSeleccionado) b.classList.add("activo");
+                b.addEventListener("click", function () {
+                    colorSeleccionado = c.valor;
+                    colorBtns.querySelectorAll(".prompt-color-btn").forEach(function (x) {
+                        x.classList.remove("activo");
+                    });
+                    b.classList.add("activo");
+                });
+                colorBtns.appendChild(b);
+            });
+
             var cerrado = false;
-            var cerrar = function (nombre) {
+            var cerrar = function (nombre, color) {
                 if (cerrado) return;
                 cerrado = true;
                 if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
-                resolve(nombre ? nombre.trim() : "");
+                resolve({ nombre: nombre ? nombre.trim() : "", color: color });
             };
 
             function marcarError(mensaje) {
@@ -764,7 +800,7 @@
                     marcarError("MÍNIMO 3 LETRAS");
                     return;
                 }
-                cerrar(nombre);
+                cerrar(nombre, colorSeleccionado);
             }
 
             btnSi.addEventListener("click", validarYEnviar);
@@ -776,16 +812,21 @@
                 if (ev.key === "Escape") confirmarCerrar();
                 ev.stopPropagation();
             });
+            colorBtns.addEventListener("keydown", function (ev) {
+                ev.stopPropagation();
+            });
 
             function confirmarCerrar() {
                 var nombre = campo.value.trim();
                 if (!nombre || nombre.length < 3) return;
-                cerrar(nombre);
+                cerrar(nombre, colorSeleccionado);
             }
 
             acciones.appendChild(btnSi);
             caja.appendChild(titulo);
             caja.appendChild(campo);
+            caja.appendChild(colorLabel);
+            caja.appendChild(colorBtns);
             caja.appendChild(acciones);
             overlay.appendChild(caja);
             document.body.appendChild(overlay);
@@ -794,11 +835,11 @@
         });
     }
 
-    function publicar(texto, x, y, nombre) {
+    function publicar(texto, x, y, nombre, color) {
         return fetch("/api/labels", {
             method: "POST",
             headers: apiHeaders(),
-            body: JSON.stringify({ text: texto, x: x, y: y, name: nombre || "", color: miColor })
+            body: JSON.stringify({ text: texto, x: x, y: y, name: nombre || "", color: color })
         }).then(function (r) {
             return r.json().then(function (d) {
                 if (!r.ok) {
@@ -845,8 +886,8 @@
         x = Math.max(5, Math.min(95, x));
         y = Math.max(8, Math.min(88, y));
 
-        pedirFirma().then(function (nombre) {
-            publicar(texto, x, y, nombre)
+        pedirFirma().then(function (r) {
+            publicar(texto, x, y, r.nombre, r.color)
                 .then(function (res) {
                     entrada.value = "";
                     contador.textContent = "0/25";

@@ -9,7 +9,7 @@ app.use(express.json());
 app.use(express.static(path.join(__dirname)));
 
 function startOfUtc() {
-    return Math.floor(Date.now() / 28800000) * 28800000;
+    return Math.floor(Date.now() / 7200000) * 7200000;
 }
 
 function getClient(request) {
@@ -172,7 +172,7 @@ app.post('/api/labels', (req, res) => {
         }
 
         if (existing) {
-            return res.status(429).json({ error: 'Solo puedes publicar un mensaje cada 8 horas.' });
+            return res.status(429).json({ error: 'Solo puedes publicar un mensaje cada 2 horas.' });
         }
 
         const row = {
