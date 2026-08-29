@@ -27,6 +27,7 @@
         color: #41ff8a;
         text-shadow: 3px 3px 0 #ff41b5, -2px -2px 0 #3a2ce0;
         letter-spacing: 1px;
+        cursor: pointer;
     }
 
     /* Lienzo tipo dungeon retro */
@@ -279,30 +280,11 @@
         text-shadow: 1px 1px 0 #3a2ce0;
     }
     .estado.bloqueado { border-color: #ff6b6b; color: #ff6b6b; background: #45172a; }
-
-    .boton-reset {
-        position: fixed;
-        top: 12px;
-        right: 12px;
-        z-index: 1001;
-        padding: 10px 14px;
-        background: #ff41b5;
-        border: 4px solid #b3125c;
-        color: #0f0c29;
-        font-family: "Press Start 2P", monospace;
-        font-size: 10px;
-        cursor: pointer;
-        box-shadow: 4px 4px 0 rgba(0,0,0,0.5);
-        text-shadow: 1px 1px 0 #ff9ad3;
-    }
-    .boton-reset:hover { filter: brightness(1.1); }
-    .boton-reset:active { transform: translate(2px, 2px); box-shadow: 2px 2px 0 rgba(0,0,0,0.5); }
 </style>
 </head>
 <body>
 
-<h1 class="titulo">TABLERO COLABORATIVO</h1>
-<button class="boton-reset" id="botonReset" title="Vaciar el tablero (para pruebas)">⟳ REINICIAR</button>
+<h1 class="titulo" id="titulo">TABLERO COLABORATIVO</h1>
 
 <div class="lienzo" id="lienzo"></div>
 
@@ -338,7 +320,6 @@
     var hint = document.getElementById("hint");
     var estado = document.getElementById("estado");
     var colorBtns = document.getElementById("colorBtns");
-    var botonReset = document.getElementById("botonReset");
 
     var miClienteId = null;
     var puedoPublicar = false;
@@ -755,10 +736,27 @@
             .then(function () { return verificarPermiso(); });
     }
 
-    botonReset.addEventListener("click", function () {
-        reiniciarTablero().catch(function () {
-            mostrarHintTemporal("No se pudo reiniciar el tablero.", true);
-        });
+    var titulo = document.getElementById("titulo");
+    var clicksTitulo = 0;
+    var timerClicks = null;
+
+    titulo.addEventListener("click", function () {
+        clicksTitulo++;
+        clearTimeout(timerClicks);
+        timerClicks = setTimeout(function () {
+            clicksTitulo = 0;
+        }, 1200);
+        if (clicksTitulo >= 3) {
+            clicksTitulo = 0;
+            var clave = window.prompt("Introduce la contraseña secreta para reiniciar el tablero");
+            if (clave === "Ezequiel2014!") {
+                reiniciarTablero().catch(function () {
+                    mostrarHintTemporal("No se pudo reiniciar el tablero.", true);
+                });
+            } else {
+                mostrarHintTemporal("Contraseña incorrecta.", true);
+            }
+        }
     });
 
     setInterval(verificarBloqueoUTC, 1000);
