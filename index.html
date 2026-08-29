@@ -266,7 +266,7 @@
 
     .estado {
         position: fixed;
-        top: 48px;
+        top: 24px;
         right: 12px;
         background: #241b5e;
         border: 4px solid #41ff8a;
@@ -280,6 +280,95 @@
         text-shadow: 1px 1px 0 #3a2ce0;
     }
     .estado.bloqueado { border-color: #ff6b6b; color: #ff6b6b; background: #45172a; }
+
+    /* ===== MODO MÓVIL ===== */
+    @media (max-width: 768px) {
+        h1.titulo {
+            font-size: 11px;
+            top: 8px;
+            left: 10px;
+            right: 10px;
+            text-align: center;
+            letter-spacing: 1px;
+        }
+
+        .estado {
+            top: 22px;
+            right: 8px;
+            left: 8px;
+            max-width: none;
+            font-size: 17px;
+            padding: 8px 10px;
+            text-align: center;
+            box-shadow: 4px 4px 0 rgba(0,0,0,0.5);
+        }
+
+        .barra {
+            flex-wrap: wrap;
+            gap: 8px;
+            padding: 10px 10px calc(12px + env(safe-area-inset-bottom, 0px));
+            align-content: flex-start;
+        }
+
+        .entrada {
+            flex: 1 1 100%;
+            max-width: none;
+            font-size: 20px;
+            padding: 12px;
+            min-height: 50px;
+        }
+
+        .contador {
+            order: 2;
+            min-width: 46px;
+            font-size: 10px;
+            align-self: center;
+            text-align: right;
+        }
+
+        .color-picker-contenedor {
+            gap: 8px;
+            flex: 1 1 100%;
+            flex-wrap: wrap;
+            align-items: center;
+        }
+
+        .color-btns {
+            flex: 0 1 auto;
+            gap: 5px;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: none;
+        }
+        .color-btns::-webkit-scrollbar { display: none; }
+
+        .color-btn {
+            width: 34px;
+            height: 34px;
+            flex: 0 0 auto;
+        }
+
+        .hint {
+            flex: 1 1 100%;
+            font-size: 16px;
+            line-height: 1.35;
+            text-align: center;
+        }
+
+        .etiqueta {
+            max-width: 72vw;
+            font-size: 20px;
+            padding: 12px 14px;
+        }
+
+        .prompt { width: 90vw; padding: 20px 16px; }
+        .prompt-titulo { font-size: 12px; }
+        .prompt-btn { font-size: 9px; padding: 14px 6px; }
+        .prompt-acciones { gap: 10px; }
+
+        /* Atenuar scanlines para que no enturbien el texto en pantallas pequeñas */
+        .lienzo::after { background: none; }
+    }
 </style>
 </head>
 <body>
@@ -320,6 +409,23 @@
     var hint = document.getElementById("hint");
     var estado = document.getElementById("estado");
     var colorBtns = document.getElementById("colorBtns");
+    var barra = document.querySelector(".barra");
+
+    // Mantener la barra sobre el teclado virtual en móviles
+    var visualViewport = window.visualViewport || null;
+    function ajustarBarra() {
+        if (!visualViewport) return;
+        var offset = Math.max(0, window.innerHeight - (visualViewport.height || window.innerHeight));
+        barra.style.bottom = offset + "px";
+        var vhOffset = offset + (barra.offsetHeight || 0);
+        lienzo.style.bottom = vhOffset + "px";
+    }
+    if (visualViewport) {
+        visualViewport.addEventListener("resize", ajustarBarra);
+        visualViewport.addEventListener("scroll", ajustarBarra);
+    }
+    window.addEventListener("resize", ajustarBarra);
+    setTimeout(ajustarBarra, 200);
 
     var miClienteId = null;
     var puedoPublicar = false;
