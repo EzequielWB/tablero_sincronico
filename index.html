@@ -331,7 +331,7 @@
         z-index: 9998;
         display: none;
         background: #241b5e;
-        border: 3px solid #ffd83d;
+        border: 3px solid #41ff8a;
         color: #c8b8ff;
         font-family: "VT323", monospace;
         font-size: 18px;
@@ -341,11 +341,25 @@
         text-decoration: none;
         box-shadow: 4px 4px 0 rgba(0,0,0,0.5);
         cursor: pointer;
-        transition: transform 0.1s ease;
+        transition: transform 0.1s ease, background-color 0.5s ease, border-color 0.5s ease, color 0.5s ease;
     }
     .espera-link b { color: #41ff8a; font-weight: 700; }
     .espera-link:hover { transform: translateX(-50%) translate(1px, 1px); }
     .espera-link:active { transform: translateX(-50%) translate(2px, 2px); box-shadow: 2px 2px 0 rgba(0,0,0,0.5); }
+    .espera-link.sacudir {
+        background: #ff6b6b;
+        border-color: #ff6b6b;
+        color: #ffffff;
+        animation: espera-shake 0.5s;
+    }
+    .espera-link.sacudir b { color: #ffffff; }
+    @keyframes espera-shake {
+        0%, 100% { transform: translateX(-50%); }
+        20% { transform: translateX(calc(-50% - 6px)); }
+        40% { transform: translateX(calc(-50% + 6px)); }
+        60% { transform: translateX(calc(-50% - 4px)); }
+        80% { transform: translateX(calc(-50% + 4px)); }
+    }
 
     /* ===== MODO MÓVIL ===== */
     @media (max-width: 768px) {
@@ -370,7 +384,7 @@
         }
 
         .espera-link {
-            top: 66px;
+            top: 84px;
             left: 8px;
             right: 8px;
             transform: none;
@@ -379,6 +393,14 @@
         }
         .espera-link:hover { transform: translate(1px, 1px); }
         .espera-link:active { transform: translate(2px, 2px); }
+        .espera-link.sacudir { animation-name: espera-shake-m; }
+        @keyframes espera-shake-m {
+            0%, 100% { transform: none; }
+            20% { transform: translateX(-6px); }
+            40% { transform: translateX(6px); }
+            60% { transform: translateX(-4px); }
+            80% { transform: translateX(4px); }
+        }
 
         .barra {
             flex-wrap: wrap;
@@ -576,11 +598,26 @@
         return pad(horas) + ":" + pad(min) + ":" + pad(seg);
     }
 
+    function mostrarEsperaLink() {
+        if (esperaLink.style.display !== "block") {
+            esperaLink.style.display = "block";
+            esperaLink.classList.remove("sacudir");
+            void esperaLink.offsetWidth;
+            esperaLink.classList.add("sacudir");
+            clearTimeout(esperaLink._shakeTimer);
+            esperaLink._shakeTimer = setTimeout(function () {
+                esperaLink.classList.remove("sacudir");
+            }, 500);
+        }
+    }
+
     function actualizarEstado() {
         if (puedoPublicar) {
             estado.textContent = "Podés escribir";
             estado.classList.remove("bloqueado");
             esperaLink.style.display = "none";
+            esperaLink.classList.remove("sacudir");
+            clearTimeout(esperaLink._shakeTimer);
             if (!hint.dataset.temporal) {
                 hint.textContent = "Escribí un mensaje y hacé clic en el tablero para colocarlo.";
                 hint.classList.remove("bloqueado");
@@ -589,7 +626,7 @@
             var restante = diasRestantes();
             estado.textContent = "Volvé a escribir en " + restante;
             estado.classList.add("bloqueado");
-            esperaLink.style.display = "block";
+            mostrarEsperaLink();
             if (!hint.dataset.temporal) {
                 hint.textContent = "Ya publicaste. Esperá un rato.";
                 hint.classList.add("bloqueado");
