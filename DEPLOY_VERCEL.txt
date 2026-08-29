@@ -1,0 +1,53 @@
+Cómo desplegar este proyecto en Vercel + Supabase
+=================================================
+
+Este proyecto necesita una base de datos persistente y COMPARTIDA para que
+todos los usuarios vean las notas de los demás. En desarrollo local guarda
+los datos en memoria, pero en producción (Vercel) debes usar Supabase, porque
+los servidores serverless de Vercel no conservan datos entre peticiones.
+
+PARTE A: Crear y configurar Supabase
+------------------------------------
+1. Crea una cuenta gratis en https://supabase.com
+2. Crea un nuevo proyecto (elige una región cercana a tus usuarios).
+3. En el Dashboard, ve al "SQL Editor" y ejecuta TODO el contenido de
+   supabase_setup.sql  (esto crea la tabla labels y sus políticas).
+4. En "Project Settings" -> "API", copia estos dos valores:
+   - Project URL        -> SUPABASE_URL
+   - service_role key   -> SUPABASE_SERVICE_ROLE_KEY
+     (La service_role key es privada. SOLO se usa en el servidor/backend,
+      nunca la pongas en código del navegador.)
+
+PARTE B: Desplegar en Vercel
+----------------------------
+1. Sube todos los archivos a un repositorio de GitHub/GitLab.
+2. Crea cuenta en https://vercel.com y conecta tu repositorio.
+3. "Add New..." -> "Project", elige el repo.
+4. Configuración:
+   - Framework Preset: Other (No Framework)
+   - Root Directory: / (raíz)
+   - Build Command: dejar vacío
+   - Output Directory: dejar vacío
+5. ANTES de desplegar, en "Environment Variables" agrega:
+   - SUPABASE_URL             = tu Project URL
+   - SUPABASE_SERVICE_ROLE_KEY = tu service_role key
+6. Haz clic en "Deploy". Vercel generará una URL pública.
+
+PARTE C: Variables de entorno en local (opcional)
+-------------------------------------------------
+Si querés probar con Supabase también en tu PC, creá un archivo .env en la
+raíz (NO lo subas a GitHub) con:
+   SUPABASE_URL=...
+   SUPABASE_SERVICE_ROLE_KEY=...
+Y ejecutá: npm install && npm start
+Si esos valores no existen, el server usa memoria (solo para desarrollo local).
+
+Notas importantes
+-----------------
+- La lógica de negocio (un mensaje por persona por día, cooldown, etc.)
+  sigue en server.js. Supabase solo guarda los datos.
+- El cooldown diario usa la zona UTC. Todos los usuarios comparten el
+  mismo "día", así que la regla "1 mensaje por persona cada 24h" se aplica
+  por persona (identificada por fingerprint/uuid/IP), no global.
+- Cambios en el tablero se ven al recargar / cada ~10 seg (polling).
+  No hay tiempo real (WebSocket) en esta versión.

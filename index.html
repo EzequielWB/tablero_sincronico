@@ -1,0 +1,780 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tablero colaborativo</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 11 8' shape-rendering='crispEdges'%3E%3Crect width='11' height='8' fill='%230f0c29'/%3E%3Cg fill='%2341ff8a'%3E%3Crect x='3' y='0' width='1' height='1'/%3E%3Crect x='7' y='0' width='1' height='1'/%3E%3Crect x='2' y='1' width='3' height='1'/%3E%3Crect x='6' y='1' width='3' height='1'/%3E%3Crect x='1' y='2' width='9' height='1'/%3E%3Crect x='0' y='3' width='2' height='1'/%3E%3Crect x='3' y='3' width='5' height='1'/%3E%3Crect x='9' y='3' width='2' height='1'/%3E%3Crect x='0' y='4' width='11' height='1'/%3E%3Crect x='1' y='5' width='8' height='1'/%3E%3Crect x='2' y='5' width='0' height='0'/%3E%3Crect x='1' y='6' width='2' height='1'/%3E%3Crect x='4' y='6' width='2' height='1'/%3E%3Crect x='7' y='6' width='2' height='1'/%3E%3Crect x='3' y='7' width='2' height='1'/%3E%3Crect x='6' y='7' width='2' height='1'/%3E%3C/g%3E%3C/svg%3E">
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap');
+
+    * { box-sizing: border-box; margin: 0; padding: 0; image-rendering: pixelated; }
+
+    html, body {
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        font-family: "Press Start 2P", "VT323", monospace;
+        background: #0f0c29;
+    }
+
+    h1.titulo {
+        position: fixed;
+        top: 12px;
+        left: 14px;
+        z-index: 1000;
+        font: 14px "Press Start 2P", monospace;
+        color: #41ff8a;
+        text-shadow: 3px 3px 0 #ff41b5, -2px -2px 0 #3a2ce0;
+        letter-spacing: 1px;
+    }
+
+    /* Lienzo tipo dungeon retro */
+    .lienzo {
+        position: fixed;
+        inset: 0;
+        width: 100vw;
+        height: 100vh;
+        cursor: crosshair;
+        touch-action: none;
+        background: #1a1440;
+        background-image:
+            linear-gradient(rgba(255,255,255,0.05) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(255,255,255,0.05) 1px, transparent 1px),
+            linear-gradient(rgba(0,0,0,0.12) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(0,0,0,0.12) 1px, transparent 1px);
+        background-size: 24px 24px, 24px 24px, 6px 6px, 6px 6px;
+        box-shadow: inset 0 0 120px rgba(0,0,0,0.6);
+    }
+
+    /* Scanlines retro */
+    .lienzo::after {
+        content: "";
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+        background: repeating-linear-gradient(
+            0deg,
+            rgba(0,0,0,0.12) 0px,
+            rgba(0,0,0,0.12) 1px,
+            transparent 1px,
+            transparent 4px
+        );
+        z-index: 9998;
+    }
+
+    .etiqueta {
+        position: absolute;
+        transform: translate(-50%, -50%);
+        background: #ffd83d;
+        color: #1a1440;
+        padding: 10px 12px;
+        border: 4px solid #ffb62e;
+        font-family: "VT323", monospace;
+        font-size: 22px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        box-shadow:
+            6px 6px 0 rgba(0,0,0,0.55),
+            inset 0 0 0 2px #1a1440;
+        image-rendering: pixelated;
+        max-width: 40vw;
+        line-height: 1.1;
+        word-break: break-word;
+        user-select: none;
+        -webkit-user-select: none;
+        touch-action: manipulation;
+        cursor: pointer;
+        transition: transform 0.1s ease;
+    }
+    .etiqueta:hover {
+        transform: translate(-50%, -52%) scale(1.02);
+    }
+    .etiqueta.propia {
+        border-color: #41ff8a;
+        box-shadow: 6px 6px 0 rgba(0,0,0,0.55), inset 0 0 0 2px #1a1440, 0 0 14px #41ff8a;
+    }
+    .etiqueta.oscura {
+        color: #ffffff;
+        text-shadow: 1px 1px 0 rgba(0,0,0,0.6);
+    }
+    .etiqueta.oscura .detalle {
+        border-top-color: rgba(255,255,255,0.4);
+        color: rgba(255,255,255,0.95);
+    }
+    .etiqueta.oscura .detalle .firma { color: #41ff8a; }
+    .etiqueta .detalle {
+        display: none;
+        margin-top: 6px;
+        padding-top: 6px;
+        border-top: 2px dashed rgba(26,20,64,0.35);
+        font-family: "VT323", monospace;
+        font-size: 16px;
+        font-weight: 400;
+        color: rgba(26,20,64,0.9);
+        text-transform: none;
+        letter-spacing: 0;
+        line-height: 1.25;
+    }
+    .etiqueta .detalle span { display: block; }
+    .etiqueta .detalle .firma { font-weight: 700; color: #8a0c44; margin-bottom: 2px; }
+    .etiqueta .detalle .hora { font-style: italic; font-size: 14px; opacity: 0.85; }
+
+    /* Diálogo de firma */
+    .overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(15,12,41,0.78);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        z-index: 100000;
+    }
+    .prompt {
+        background: #241b5e;
+        border: 4px solid #41ff8a;
+        padding: 22px 26px;
+        box-shadow: 8px 8px 0 rgba(0,0,0,0.6);
+        text-align: center;
+        width: min(380px, 88vw);
+    }
+    .prompt-titulo {
+        font-family: "Press Start 2P", monospace;
+        font-size: 13px;
+        color: #41ff8a;
+        text-shadow: 2px 2px 0 #3a2ce0;
+        margin-bottom: 16px;
+        line-height: 1.5;
+    }
+    .prompt-input {
+        width: 100%;
+        padding: 12px;
+        border: 4px solid #3a2ce0;
+        background: #0f0c29;
+        color: #41ff8a;
+        font-family: "VT323", monospace;
+        font-size: 22px;
+        text-align: center;
+        outline: none;
+        box-shadow: inset 0 0 0 2px #1a1440;
+        margin-bottom: 18px;
+    }
+    .prompt-input::placeholder { color: #6b5fd4; }
+    .prompt-input:focus { border-color: #41ff8a; }
+    .prompt-acciones { display: flex; gap: 12px; justify-content: center; }
+    .prompt-btn {
+        flex: 1;
+        padding: 12px 8px;
+        border: 4px solid;
+        font-family: "Press Start 2P", monospace;
+        font-size: 10px;
+        cursor: pointer;
+    }
+    .prompt-btn.si { background: #41ff8a; border-color: #2fd06d; color: #0f0c29; box-shadow: 4px 4px 0 rgba(0,0,0,0.4); }
+    .prompt-btn.nocolor { background: #1a1440; border-color: #555074; color: #c8b8ff; box-shadow: 4px 4px 0 rgba(0,0,0,0.4); }
+    .prompt-btn:hover { filter: brightness(1.1); }
+    .prompt-btn:active { transform: translate(2px, 2px); box-shadow: 2px 2px 0 rgba(0,0,0,0.4); }
+
+    .barra {
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        padding: 14px 18px;
+        background: #241b5e;
+        border-top: 4px solid #41ff8a;
+        box-shadow: 0 -6px 0 rgba(0,0,0,0.4);
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        z-index: 9999;
+    }
+
+    .entrada {
+        flex: 1;
+        max-width: 460px;
+        padding: 14px;
+        border: 4px solid #3a2ce0;
+        background: #0f0c29;
+        color: #41ff8a;
+        font-family: "VT323", monospace;
+        font-size: 22px;
+        letter-spacing: 1px;
+        outline: none;
+        box-shadow: inset 0 0 0 2px #1a1440;
+    }
+    .entrada::placeholder { color: #6b5fd4; }
+    .entrada:focus { border-color: #41ff8a; }
+    .entrada:disabled { background: #1a1440; color: #555074; border-color: #3b3658; cursor: not-allowed; }
+
+    .contador {
+        font-family: "Press Start 2P", monospace;
+        font-size: 11px;
+        color: #ff41b5;
+        min-width: 60px;
+        text-shadow: 2px 2px 0 #3a2ce0;
+    }
+
+    .color-picker-contenedor {
+        position: relative;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .color-btns {
+        display: flex;
+        gap: 4px;
+    }
+
+    .color-btn {
+        width: 30px;
+        height: 30px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        flex-shrink: 0;
+        font-size: 10px;
+        color: #ffffff;
+        text-shadow: 1px 1px 0 #000000;
+        transition: transform 0.1s;
+    }
+    .color-btn:hover { transform: translate(1px, 1px); }
+    .color-btn:active { transform: translate(2px, 2px); }
+
+    .color-1 { background: #ffd83d; }
+    .color-2 { background: #41ff8a; color: #000000; }
+    .color-3 { background: #ff41b5; color: #000000; }
+    .color-4 { background: #3a2ce0; color: #ffffff; }
+    .color-5 { background: #c8b8ff; color: #000000; }
+    .color-6 { background: #8a0c44; color: #ffffff; }
+    .color-7 { background: #ff6b6b; color: #000000; }
+    .color-8 { background: #3b3658; color: #ffffff; }
+    .color-9 { background: #1a1440; color: #ffffff; }
+    .color-10 { background: #0f0c29; color: #ffffff; }
+
+    .hint {
+        font-family: "VT323", monospace;
+        font-size: 20px;
+        color: #c8b8ff;
+        line-height: 1.3;
+        flex: 1;
+    }
+    .hint.bloqueado { color: #ff6b6b; font-weight: 700; }
+
+    .estado {
+        position: fixed;
+        top: 48px;
+        right: 12px;
+        background: #241b5e;
+        border: 4px solid #41ff8a;
+        padding: 10px 14px;
+        font-family: "VT323", monospace;
+        font-size: 20px;
+        color: #41ff8a;
+        z-index: 9999;
+        max-width: 340px;
+        box-shadow: 6px 6px 0 rgba(0,0,0,0.5);
+        text-shadow: 1px 1px 0 #3a2ce0;
+    }
+    .estado.bloqueado { border-color: #ff6b6b; color: #ff6b6b; background: #45172a; }
+
+    .boton-reset {
+        position: fixed;
+        top: 12px;
+        right: 12px;
+        z-index: 1001;
+        padding: 10px 14px;
+        background: #ff41b5;
+        border: 4px solid #b3125c;
+        color: #0f0c29;
+        font-family: "Press Start 2P", monospace;
+        font-size: 10px;
+        cursor: pointer;
+        box-shadow: 4px 4px 0 rgba(0,0,0,0.5);
+        text-shadow: 1px 1px 0 #ff9ad3;
+    }
+    .boton-reset:hover { filter: brightness(1.1); }
+    .boton-reset:active { transform: translate(2px, 2px); box-shadow: 2px 2px 0 rgba(0,0,0,0.5); }
+</style>
+</head>
+<body>
+
+<h1 class="titulo">TABLERO COLABORATIVO</h1>
+<button class="boton-reset" id="botonReset" title="Vaciar el tablero (para pruebas)">⟳ REINICIAR</button>
+
+<div class="lienzo" id="lienzo"></div>
+
+<div class="estado" id="estado">Conectando…</div>
+
+<div class="barra">
+    <input class="entrada" id="entrada" maxlength="25" placeholder="Escribe tu mensaje aquí..." autocomplete="off">
+    <span class="contador" id="contador">0/25</span>
+    <div class="color-picker-contenedor" title="Elegir color de tarjeta">
+        <div class="color-btns" id="colorBtns">
+            <button class="color-btn color-1" title="Amarillo" value="#ffd83d"></button>
+            <button class="color-btn color-2" title="Verde claro" value="#41ff8a"></button>
+            <button class="color-btn color-3" title="Rosa" value="#ff41b5"></button>
+            <button class="color-btn color-4" title="Morado" value="#3a2ce0"></button>
+            <button class="color-btn color-5" title="Lila claro" value="#c8b8ff"></button>
+            <button class="color-btn color-6" title="Rojo oscuro" value="#8a0c44"></button>
+            <button class="color-btn color-7" title="Rojo" value="#ff6b6b"></button>
+            <button class="color-btn color-8" title="Purpura oscuro" value="#3b3658"></button>
+            <button class="color-btn color-9" title="Azul oscuro" value="#1a1440"></button>
+            <button class="color-btn color-10" title="Casi negro" value="#0f0c29"></button>
+        </div>
+        <span class="hint" id="hint">Escribe un mensaje y haz clic en el tablero para colocarlo.</span>
+    </div>
+</div>
+
+<script>
+(function () {
+    "use strict";
+
+    var lienzo = document.getElementById("lienzo");
+    var entrada = document.getElementById("entrada");
+    var contador = document.getElementById("contador");
+    var hint = document.getElementById("hint");
+    var estado = document.getElementById("estado");
+    var colorBtns = document.getElementById("colorBtns");
+    var botonReset = document.getElementById("botonReset");
+
+    var miClienteId = null;
+    var puedoPublicar = false;
+    var diaActualUTC = null;
+    var miColor = "#ffd83d";
+
+    var CUENTA_UTC = 86400000;
+
+    function utcDay(date) {
+        return Math.floor(date.getTime() / CUENTA_UTC) * CUENTA_UTC;
+    }
+
+    function fingerprint() {
+        try {
+            var acc = navigator.userAgent + "|" +
+                (navigator.language || "") + "|" +
+                screen.width + "x" + screen.height + "|" +
+                new Date().getTimezoneOffset() + "|" +
+                (navigator.hardwareConcurrency || "") + "|" +
+                (navigator.deviceMemory || "");
+            var h = 0;
+            for (var i = 0; i < acc.length; i++) {
+                h = ((h << 5) - h + acc.charCodeAt(i)) | 0;
+            }
+            return String(h >>> 0);
+        } catch (e) {
+            return null;
+        }
+    }
+
+    function getOrCreateUUID() {
+        var key = "tablero_uuid";
+        try {
+            var v = localStorage.getItem(key);
+            if (v) return v;
+            v = "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, function (c) {
+                var r = Math.random() * 16 | 0;
+                var v2 = c === "x" ? r : (r & 0x3 | 0x8);
+                return v2.toString(16);
+            });
+            localStorage.setItem(key, v);
+            return v;
+        } catch (e) {
+            return "uuid-" + Math.random().toString(36).slice(2) + Date.now().toString(36);
+        }
+    }
+
+    var fp = fingerprint();
+    var uuid = getOrCreateUUID();
+
+    function apiHeaders() {
+        return {
+            "Content-Type": "application/json",
+            "X-Fingerprint": fp || "",
+            "X-Uuid": uuid
+        };
+    }
+
+    function diasRestantes() {
+        var baseDia = diaActualUTC != null ? diaActualUTC : utcDay(new Date());
+        var fin = baseDia + CUENTA_UTC;
+        var resto = fin - Date.now();
+        if (resto <= 0) return "00:00:00";
+        var horas = Math.floor(resto / 3600000);
+        var min = Math.floor((resto % 3600000) / 60000);
+        var seg = Math.floor((resto % 60000) / 1000);
+        function pad(n) { return n < 10 ? "0" + n : String(n); }
+        return pad(horas) + ":" + pad(min) + ":" + pad(seg);
+    }
+
+    function actualizarEstado() {
+        if (puedoPublicar) {
+            estado.textContent = "Puedes escribir";
+            estado.classList.remove("bloqueado");
+            if (!hint.dataset.temporal) {
+                hint.textContent = "Escribe un mensaje y haz clic en el tablero para colocarlo.";
+                hint.classList.remove("bloqueado");
+            }
+        } else {
+            var restante = diasRestantes();
+            estado.textContent = "Vuelve a escribir en " + restante;
+            estado.classList.add("bloqueado");
+            if (!hint.dataset.temporal) {
+                hint.textContent = "Ya publicaste hoy. Espera el próximo ciclo para escribir.";
+                hint.classList.add("bloqueado");
+            }
+        }
+    }
+
+    function mostrarHintTemporal(mensaje, esError) {
+        hint.dataset.temporal = "1";
+        hint.textContent = mensaje;
+        if (esError) hint.classList.add("bloqueado");
+        else hint.classList.remove("bloqueado");
+
+        clearTimeout(hint._timer);
+        hint._timer = setTimeout(function () {
+            delete hint.dataset.temporal;
+            actualizarEstado();
+        }, 3500);
+    }
+
+    // Configuración del Selector de Color
+    miColor = "#ffd83d";
+
+    function marcarColorActivo() {
+        colorBtns.querySelectorAll(".color-btn").forEach(function (btn) {
+            var activo = btn.getAttribute("value") === miColor;
+            btn.style.outline = activo ? "3px solid #ffffff" : "none";
+            btn.style.transform = activo ? "translate(1px, 1px)" : "";
+        });
+    }
+
+    colorBtns.querySelectorAll(".color-btn").forEach(function (btn) {
+        btn.addEventListener("click", function () {
+            miColor = btn.getAttribute("value");
+            marcarColorActivo();
+        });
+    });
+    marcarColorActivo();
+
+    // Contador de caracteres
+    entrada.addEventListener("input", function () {
+        if (entrada.value.length > 25) {
+            entrada.value = entrada.value.slice(0, 25);
+        }
+        contador.textContent = entrada.value.length + "/25";
+    });
+
+    function esColorOscuro(hex) {
+        var h = hex.replace("#", "");
+        if (h.length !== 6) return false;
+        var r = parseInt(h.slice(0, 2), 16);
+        var g = parseInt(h.slice(2, 4), 16);
+        var b = parseInt(h.slice(4, 6), 16);
+        var luminancia = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+        return luminancia < 0.5;
+    }
+
+    function render(labels, propioId) {
+        var ultimos = labels.slice(-200);
+        ultimos.sort(function (a, b) { return a.timestamp - b.timestamp; });
+
+        var actuales = {};
+        ultimos.forEach(function (l) { actuales[l.id] = l; });
+
+        var existentes = {};
+        lienzo.querySelectorAll(".etiqueta").forEach(function (el) {
+            existentes[el.dataset.id] = el;
+        });
+
+        Object.keys(existentes).forEach(function (id) {
+            if (!actuales[id]) existentes[id].remove();
+        });
+
+        ultimos.forEach(function (l, idx) {
+            var el = existentes[l.id];
+            if (!el) {
+                el = document.createElement("div");
+                el.className = "etiqueta" + (l.id === propioId ? " propia" : "");
+                el.dataset.id = l.id;
+
+                var textoSpan = document.createElement("span");
+                el.appendChild(textoSpan);
+
+                var detalle = document.createElement("span");
+                detalle.className = "detalle";
+                detalle.style.display = "none";
+
+                var firmaSpan = document.createElement("span");
+                firmaSpan.className = "firma";
+                detalle.appendChild(firmaSpan);
+
+                var horaSpan = document.createElement("span");
+                horaSpan.className = "hora";
+                detalle.appendChild(horaSpan);
+
+                el.appendChild(detalle);
+                lienzo.appendChild(el);
+            }
+
+            if (l.id === propioId) {
+                el.classList.add("propia");
+            } else {
+                el.classList.remove("propia");
+            }
+
+            var textoEl = el.childNodes[0];
+            var detEl = el.querySelector(".detalle");
+            var firmaEl = detEl.querySelector(".firma");
+            var horaEl = detEl.querySelector(".hora");
+
+            if (el.dataset.texto !== l.text) {
+                textoEl.textContent = l.text;
+                el.dataset.texto = l.text;
+            }
+
+            if (l.name) {
+                firmaEl.textContent = "✎ " + l.name;
+                firmaEl.style.display = "block";
+            } else {
+                firmaEl.style.display = "none";
+            }
+
+            horaEl.textContent = new Date(l.timestamp).toLocaleString();
+            el.style.left = l.x + "%";
+            el.style.top = l.y + "%";
+            el.style.zIndex = String(1000 + idx);
+            if (l.color) el.style.backgroundColor = l.color;
+
+            // Contraste de texto según luminosidad del fondo
+            el.classList.toggle("oscura", esColorOscuro(l.color || "#ffd83d"));
+        });
+    }
+
+    function ocultarDetalles() {
+        lienzo.querySelectorAll(".detalle").forEach(function (d) {
+            d.style.display = "none";
+        });
+    }
+
+    function pedirFirma() {
+        return new Promise(function (resolve) {
+            var overlay = document.createElement("div");
+            overlay.className = "overlay";
+
+            var caja = document.createElement("div");
+            caja.className = "prompt";
+
+            var titulo = document.createElement("div");
+            titulo.className = "prompt-titulo";
+            titulo.textContent = "¿DESEAS FIRMAR TU MENSAJE?";
+
+            var campo = document.createElement("input");
+            campo.className = "prompt-input";
+            campo.maxLength = 20;
+            campo.placeholder = "Tu firma (opcional)";
+            campo.autocomplete = "off";
+
+            var acciones = document.createElement("div");
+            acciones.className = "prompt-acciones";
+
+            var btnNo = document.createElement("button");
+            btnNo.className = "prompt-btn nocolor";
+            btnNo.textContent = "SIN FIRMA";
+
+            var btnSi = document.createElement("button");
+            btnSi.className = "prompt-btn si";
+            btnSi.textContent = "FIRMAR";
+
+            var cerrado = false;
+            var cerrar = function (nombre) {
+                if (cerrado) return;
+                cerrado = true;
+                if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
+                resolve(nombre ? nombre.trim() : "");
+            };
+
+            btnNo.addEventListener("click", function () { cerrar(""); });
+            btnSi.addEventListener("click", function () { cerrar(campo.value); });
+            overlay.addEventListener("mousedown", function (ev) {
+                if (ev.target === overlay) cerrar("");
+            });
+            campo.addEventListener("keydown", function (ev) {
+                if (ev.key === "Enter") cerrar(campo.value);
+                if (ev.key === "Escape") cerrar("");
+                ev.stopPropagation();
+            });
+
+            acciones.appendChild(btnNo);
+            acciones.appendChild(btnSi);
+            caja.appendChild(titulo);
+            caja.appendChild(campo);
+            caja.appendChild(acciones);
+            overlay.appendChild(caja);
+            document.body.appendChild(overlay);
+
+            setTimeout(function () { campo.focus(); }, 50);
+        });
+    }
+
+    function publicar(texto, x, y, nombre) {
+        return fetch("/api/labels", {
+            method: "POST",
+            headers: apiHeaders(),
+            body: JSON.stringify({ text: texto, x: x, y: y, name: nombre || "", color: miColor })
+        }).then(function (r) {
+            return r.json().then(function (d) {
+                if (!r.ok) {
+                    throw new Error(d.error || "Error al publicar");
+                }
+                return d;
+            });
+        });
+    }
+
+    function manejarClickTablero(ev) {
+        // Si se hizo click en una tarjeta existente, alternar el detalle
+        var etiqueta = ev.target.closest ? ev.target.closest(".etiqueta") : null;
+        if (etiqueta) {
+            var det = etiqueta.querySelector(".detalle");
+            if (det) {
+                var visible = det.style.display === "block";
+                ocultarDetalles();
+                det.style.display = visible ? "none" : "block";
+            }
+            return;
+        }
+
+        ocultarDetalles();
+
+        if (!puedoPublicar) {
+            mostrarHintTemporal("¡Ya publicaste hoy! Vuelve en " + diasRestantes(), true);
+            return;
+        }
+
+        var texto = entrada.value.trim();
+        if (!texto) {
+            entrada.focus();
+            mostrarHintTemporal("¡Escribe un mensaje primero en el campo de abajo!", true);
+            return;
+        }
+
+        // Calcular posición en porcentaje dentro del lienzo
+        var rect = lienzo.getBoundingClientRect();
+        var x = ((ev.clientX - rect.left) / rect.width) * 100;
+        var y = ((ev.clientY - rect.top) / rect.height) * 100;
+
+        // Limitar a márgenes razonables para que la tarjeta no quede cortada
+        x = Math.max(5, Math.min(95, x));
+        y = Math.max(8, Math.min(88, y));
+
+        pedirFirma().then(function (nombre) {
+            publicar(texto, x, y, nombre)
+                .then(function (res) {
+                    entrada.value = "";
+                    contador.textContent = "0/25";
+                    if (res.clientId) miClienteId = res.clientId;
+                    bloqueoUI();
+                    mostrarHintTemporal("¡Mensaje colocado con éxito!", false);
+                    return cargarTablero();
+                })
+                .catch(function (err) {
+                    mostrarHintTemporal(err.message || "Error al publicar", true);
+                    verificarPermiso();
+                });
+        });
+    }
+
+    function bloqueoUI() {
+        puedoPublicar = false;
+        entrada.disabled = true;
+        actualizarEstado();
+    }
+
+    function desbloquearUI() {
+        puedoPublicar = true;
+        entrada.disabled = false;
+        actualizarEstado();
+    }
+
+    function verificarBloqueoUTC() {
+        var ahoraDia = utcDay(new Date());
+        if (diaActualUTC != null && ahoraDia > diaActualUTC) {
+            diaActualUTC = ahoraDia;
+            verificarPermiso();
+        } else {
+            actualizarEstado();
+        }
+    }
+
+    lienzo.addEventListener("click", manejarClickTablero);
+    lienzo.addEventListener("contextmenu", function (e) { e.preventDefault(); });
+
+    function cargarTablero() {
+        return fetch("/api/labels", { headers: apiHeaders() })
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+                if (data.dayStart) diaActualUTC = data.dayStart;
+                render(data.labels, miClienteId);
+            })
+            .catch(function (e) {
+                console.error("Error al cargar tablero:", e);
+            });
+    }
+
+    function verificarPermiso() {
+        return fetch("/api/me", { headers: apiHeaders() })
+            .then(function (r) { return r.json(); })
+            .then(function (d) {
+                if (d.clientId) miClienteId = d.clientId;
+                if (d.dayStart) diaActualUTC = d.dayStart;
+                if (d.canPost) {
+                    desbloquearUI();
+                } else {
+                    bloqueoUI();
+                }
+            })
+            .catch(function (e) {
+                console.error("Error al verificar permisos:", e);
+                estado.textContent = "Sin conexión";
+                estado.classList.add("bloqueado");
+            });
+    }
+
+    function reiniciarTablero() {
+        return fetch("/api/reset", { method: "POST", headers: apiHeaders() })
+            .then(function (r) { return r.json(); })
+            .then(function () {
+                diaActualUTC = null;
+                ocultarDetalles();
+                return cargarTablero();
+            })
+            .then(function () { return verificarPermiso(); });
+    }
+
+    botonReset.addEventListener("click", function () {
+        reiniciarTablero().catch(function () {
+            mostrarHintTemporal("No se pudo reiniciar el tablero.", true);
+        });
+    });
+
+    setInterval(verificarBloqueoUTC, 1000);
+
+    cargarTablero()
+        .then(function () { return verificarPermiso(); })
+        .catch(function () {
+            estado.textContent = "Sin conexión";
+            estado.classList.add("bloqueado");
+        });
+
+    setInterval(function () {
+        cargarTablero();
+        verificarPermiso();
+    }, 10000);
+})();
+</script>
+</body>
+</html>
